@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event-Driven Stock Prediction Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.18.0/plotly.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #6f9efb 0%, #0041d7 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-bottom: 15px;
+        }
+        
+        .architecture-info {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 25px;
+            color: white;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .architecture-badges {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+        
+        .badge {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 25px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        
+        .badge.event-sourcing { background: linear-gradient(135deg, #17a2b8, #007bff); }
+        .badge.cqrs { background: linear-gradient(135deg, #fd7e14, #e83e8c); }
+        .badge.kafka { background: linear-gradient(135deg, #6f42c1, #e83e8c); }
+        .badge.async { background: linear-gradient(135deg, #dc3545, #fd7e14); }
+        
+        .dashboard {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.15);
+            padding: 35px;
+            margin-bottom: 25px;
+        }
+        
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 20px;
+            align-items: end;
+            margin-bottom: 35px;
+            padding: 25px;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 15px;
+            border: 2px solid #e9ecef;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.06);
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-group label {
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: #495057;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .symbol-input {
+            width: 100%;
+            padding: 15px 20px;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            background: white;
+            color: #495057;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 2px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        
+        .symbol-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15);
+            transform: translateY(-1px);
+        }
+        
+        .btn {
+            padding: 15px 25px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            min-width: 180px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.5);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        
+        .status-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+            margin-bottom: 35px;
+        }
+        
+        .status-card {
+            background: linear-gradient(135deg, #ffffff, #f8f9fa);
+            border: 2px solid #e9ecef;
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+        
+        .status-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            border-color: #667eea;
+        }
+        
+        .status-card h3 {
+            color: #495057;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+        
+        .status-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        
+        .status-value.positive { color: #28a745; }
+        .status-value.negative { color: #dc3545; }
+        .status-value.neutral { color: #6c757d; }
+        
+        .chart-container {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border: 1px solid #e9ecef;
+        }
+        
+        .progress-container {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 2px solid #e9ecef;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+        
+        .progress-step {
+            display: flex;
+            align-items: center;
+            padding: 12px 0;
+            color: #6c757d;
+            font-size: 1rem;
+            opacity: 0.5;
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+            padding-left: 15px;
+        }
+        
+        .progress-step.active {
+            color: #667eea;
+            opacity: 1;
+            font-weight: 600;
+            border-left-color: #667eea;
+            background: rgba(102, 126, 234, 0.05);
+        }
+        
+        .progress-step.completed {
+            color: #28a745;
+            opacity: 1;
+            border-left-color: #28a745;
+            background: rgba(40, 167, 69, 0.05);
+        }
+        
+        .progress-step.error {
+            color: #dc3545;
+            opacity: 1;
+            border-left-color: #dc3545;
+            background: rgba(220, 53, 69, 0.05);
+        }
+        
+        .alert {
+            padding: 18px 25px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            border-left: 5px solid;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .alert-success {
+            background: linear-gradient(135deg, #d4edda, #c3e6cb);
+            color: #155724;
+            border-left-color: #28a745;
+        }
+        
+        .alert-error {
+            background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+            color: #721c24;
+            border-left-color: #dc3545;
+        }
+        
+        .alert-warning {
+            background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+            color: #856404;
+            border-left-color: #ffc107;
+        }
+        
+        .alert-info {
+            background: linear-gradient(135deg, #cce7ff, #b3d7ff);
+            color: #004085;
+            border-left-color: #007bff;
+        }
+        
+        .predictions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin-top: 25px;
+        }
+        
+        .prediction-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+        
+        .prediction-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+            border-color: #667eea;
+        }
+        
+        .prediction-card h4 {
+            color: #495057;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 1.3rem;
+        }
+        
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 50px;
+            color: #6c757d;
+            font-size: 1.1rem;
+        }
+        
+        .loading::after {
+            content: '';
+            width: 24px;
+            height: 24px;
+            margin-left: 15px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .event-flow-indicator {
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+            border: 2px solid #2196f3;
+            border-radius: 12px;
+            padding: 15px;
+            margin: 15px 0;
+            font-size: 0.9rem;
+            color: #1565c0;
+        }
+        
+        .command-status {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 8px;
+            padding: 10px 15px;
+            margin: 10px 0;
+            font-size: 0.85rem;
+            color: #856404;
+        }
+        
+        .event-list {
+            list-style: none;
+        }
+        
+        .event-list li {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #f8f9fa;
+            font-size: 0.9rem;
+        }
+        
+        .event-list li:last-child {
+            border-bottom: none;
+        }
+        
+        @media (max-width: 768px) {
+            .controls {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .btn {
+                width: 100%;
+            }
+            
+            .container {
+                padding: 15px;
+            }
+            
+            .header h1 {
+                font-size: 2.2rem;
+            }
+            
+            .dashboard {
+                padding: 25px;
+            }
+            
+            .status-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚡ Event-Driven Stock Prediction</h1>
+            <p>Advanced CQRS + Event Sourcing Architecture with Kafka Streaming</p>
+        </div>
+        
+        <div class="architecture-info">
+            <h3>🏗️ Event-Driven Architecture</h3>
+            <p>Fully asynchronous system with command/query separation and complete event audit trail</p>
+            <div class="architecture-badges">
+                <span class="badge event-sourcing">Event Sourcing</span>
+                <span class="badge cqrs">CQRS</span>
+                <span class="badge kafka">Kafka Streaming</span>
+                <span class="badge async">Async Processing</span>
+            </div>
+        </div>
+        
+        <div class="dashboard">
+            <div class="controls">
+                <div class="form-group">
+                    <label for="symbolInput">Enter Stock Symbol</label>
+                    <input type="text" id="symbolInput" class="symbol-input" 
+                           placeholder="Type symbol (e.g., AAPL, TSLA)..." 
+                           maxlength="10" />
+                    <div id="commandStatus" class="command-status" style="display: none;"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label>&nbsp;</label>
+                    <button id="analyzeBtn" class="btn btn-primary">⚡ Send Command</button>
+                </div>
+            </div>
+            
+            <div id="alertContainer"></div>
+            
+            <div class="progress-container" id="eventProgress" style="display: none;">
+                <h4>📡 Event Flow Progress</h4>
+                <div class="progress-step" id="commandSent">📤 Command Sent to Event Store</div>
+                <div class="progress-step" id="eventGenerated">⚡ Events Generated</div>
+                <div class="progress-step" id="workflowStarted">🔄 Async Workflow Started</div>
+                <div class="progress-step" id="dataProcessed">📊 Data Processing Events</div>
+                <div class="progress-step" id="modelTrained">🧠 ML Training Events</div>
+                <div class="progress-step" id="predictionsGenerated">📈 Prediction Events</div>
+                <div class="progress-step" id="readModelUpdated">💾 Read Model Updated</div>
+                <div class="progress-step" id="queryReady">✅ Ready for Queries</div>
+            </div>
+            
+            <div class="status-container">
+                <div class="status-card">
+                    <h3>Current Price</h3>
+                    <div id="currentPrice" class="status-value neutral">-</div>
+                    <div id="priceChange" class="status-change">From Read Model</div>
+                </div>
+                
+                <div class="status-card">
+                    <h3>Event System</h3>
+                    <div id="eventSystemStatus" class="status-value neutral">-</div>
+                    <div class="status-change">CQRS Active</div>
+                </div>
+                
+                <div class="status-card">
+                    <h3>Commands Sent</h3>
+                    <div id="commandCount" class="status-value neutral">0</div>
+                    <div class="status-change">Total Commands</div>
+                </div>
+                
+                <div class="status-card">
+                    <h3>Analysis Status</h3>
+                    <div id="analysisStatus" class="status-value neutral">Ready</div>
+                    <div class="status-change">Current State</div>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <div id="chartDiv">
+                    <div class="loading">Select a symbol and send analysis command to view event-driven chart</div>
+                </div>
+            </div>
+            
+            <div id="predictionsContainer" class="predictions-grid" style="display: none;">
+                <div class="prediction-card">
+                    <h4>🤖 Event-Driven LSTM</h4>
+                    <div class="event-flow-indicator">
+                        ⚡ Generated via asynchronous event workflow
+                    </div>
+                    <ul id="lstmPredictions" class="event-list"></ul>
+                </div>
+                
+                <div class="prediction-card">
+                    <h4>🏗️ Architecture Info</h4>
+                    <ul class="event-list">
+                        <li><span>Pattern</span><span>CQRS + Event Sourcing</span></li>
+                        <li><span>Event Store</span><span>Kafka</span></li>
+                        <li><span>Consistency</span><span>Eventually Consistent</span></li>
+                        <li><span>Processing</span><span>Asynchronous</span></li>
+                        <li><span>Scalability</span><span>Horizontal</span></li>
+                        <li><span>Audit Trail</span><span>Complete</span></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables for event-driven system
+        let currentSymbol = '';
+        let commandCounter = 0;
+        
+        // DOM elements
+        const symbolInput = document.getElementById('symbolInput');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const commandStatus = document.getElementById('commandStatus');
+        const eventProgress = document.getElementById('eventProgress');
+        const alertContainer = document.getElementById('alertContainer');
+        
+        // Initialize event-driven dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Event-Driven Dashboard initializing...');
+            setupEventListeners();
+            checkEventSystemStatus();
+        });
+        
+        function setupEventListeners() {
+            console.log('⚙️ Setting up event-driven listeners...');
+            
+            symbolInput.addEventListener('input', function() {
+                const value = this.value.trim().toUpperCase();
+                
+                if (value && /^[A-Z]{1,10}$/.test(value)) {
+                    currentSymbol = value;
+                    analyzeBtn.disabled = false;
+                } else {
+                    currentSymbol = '';
+                    analyzeBtn.disabled = true;
+                }
+            });
+            
+            symbolInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && currentSymbol) {
+                    e.preventDefault();
+                    sendAnalysisCommand();
+                }
+            });
+            
+            analyzeBtn.addEventListener('click', sendAnalysisCommand);
+            
+            // Initial button states
+            analyzeBtn.disabled = true;
+            
+            console.log('✅ Event-driven listeners setup complete');
+        }
+        
+        async function checkEventSystemStatus() {
+            try {
+                console.log('🔍 Checking event system status...');
+                const response = await fetch('/api/status');
+                const data = await response.json();
+                
+                updateEventSystemStatus(data);
+                
+                if (data.event_driven_system) {
+                    showAlert(`✅ ${data.architecture || 'Event-driven system'} operational`, 'success');
+                } else {
+                    showAlert(`⚠️ ${data.message}`, 'warning');
+                }
+            } catch (error) {
+                console.error('Error checking event system status:', error);
+                showAlert('⚠️ Could not check event system status', 'warning');
+            }
+        }
+        
+        function updateEventSystemStatus(data) {
+            const statusEl = document.getElementById('eventSystemStatus');
+            const commandCountEl = document.getElementById('commandCount');
+            
+            if (statusEl) {
+                statusEl.textContent = data.event_driven_system ? 'Active' : 'Offline';
+                statusEl.className = `status-value ${data.event_driven_system ? 'positive' : 'negative'}`;
+            }
+            
+            if (commandCountEl) {
+                commandCountEl.textContent = commandCounter;
+            }
+        }
+        
+        async function sendAnalysisCommand() {
+            if (!currentSymbol) {
+                showAlert('Please enter a valid stock symbol', 'warning');
+                return;
+            }
+            
+            console.log(`📤 Sending analysis command for: ${currentSymbol}`);
+            
+            try {
+                setLoading(analyzeBtn, true);
+                showEventProgress();
+                commandCounter++;
+                
+                // Update command status
+                updateCommandStatus(`Sending RequestAnalysis command for ${currentSymbol}...`);
+                updateProgressStep('commandSent', 'active');
+                updateAnalysisStatus('Processing...');
+                
+                // Send command to event-driven system
+                const response = await fetch(`/api/analyze/${currentSymbol}`);
+                const data = await response.json();
+                
+                console.log('Command response:', data);
+                
+                if (data.status === 'success') {
+                    updateProgressStep('commandSent', 'completed');
+                    updateProgressStep('eventGenerated', 'active');
+                    updateProgressStep('workflowStarted', 'active');
+                    
+                    updateCommandStatus(`✅ Command sent! ID: ${data.command_id}`);
+                    
+                    showAlert(`⚡ Analysis command sent for ${currentSymbol} via ${data.architecture}`, 'success');
+                    
+                    // Start polling for results and auto-display when ready
+                    startEventPolling(currentSymbol);
+                    
+                } else {
+                    updateAllProgressStepsError();
+                    updateCommandStatus(`❌ Command failed: ${data.message}`);
+                    showAlert(`❌ Command failed: ${data.message}`, 'error');
+                    updateAnalysisStatus('Failed');
+                }
+                
+            } catch (error) {
+                console.error('Error sending command:', error);
+                updateAllProgressStepsError();
+                updateCommandStatus(`❌ Command error: ${error.message}`);
+                showAlert(`❌ Command error: ${error.message}`, 'error');
+                updateAnalysisStatus('Error');
+            } finally {
+                setLoading(analyzeBtn, false);
+                
+                // Update counters
+                document.getElementById('commandCount').textContent = commandCounter;
+            }
+        }
+        
+        async function startEventPolling(symbol) {
+            console.log(`📡 Starting event polling for ${symbol}`);
+            
+            let attempts = 0;
+            const maxAttempts = 24; // 2 minutes of polling
+            
+            const pollInterval = setInterval(async () => {
+                try {
+                    attempts++;
+                    
+                    // Check analysis status
+                    const statusResponse = await fetch(`/api/status/${symbol}`);
+                    const statusData = await statusResponse.json();
+                    
+                    if (statusData.status === 'success') {
+                        const analysisStatus = statusData.analysis_status;
+                        console.log(`📊 Polling status for ${symbol}:`, analysisStatus.status);
+                        
+                        // Update progress based on status
+                        updateEventProgress(analysisStatus);
+                        updateAnalysisStatus(analysisStatus.status || 'Running...');
+                        
+                        if (analysisStatus.status === 'completed') {
+                            updateProgressStep('readModelUpdated', 'completed');
+                            updateProgressStep('queryReady', 'completed');
+                            
+                            showAlert(`🎉 Event workflow completed for ${symbol}! Auto-loading results...`, 'success');
+                            clearInterval(pollInterval);
+                            updateAnalysisStatus('Completed');
+                            
+                            // Auto-load results
+                            setTimeout(() => loadAnalysisResults(symbol), 1000);
+                        }
+                    }
+                    
+                    if (attempts >= maxAttempts) {
+                        clearInterval(pollInterval);
+                        showAlert(`⏰ Event polling timeout for ${symbol}`, 'warning');
+                        updateAnalysisStatus('Timeout');
+                    }
+                    
+                } catch (error) {
+                    console.error('Polling error:', error);
+                }
+            }, 5000); // Poll every 5 seconds
+        }
+        
+        async function loadAnalysisResults(symbol) {
+            try {
+                console.log(`🔍 Auto-loading analysis results for: ${symbol}`);
+                
+                // Query via CQRS read model
+                const response = await fetch(`/api/results/${symbol}`);
+                const data = await response.json();
+                
+                console.log('Query response:', data);
+                
+                if (data.status === 'success') {
+                    showAlert(`✅ Results loaded automatically from CQRS read model`, 'success');
+                    
+                    // Display results
+                    displayEventDrivenResults(data.results);
+                    
+                    // Load chart
+                    await loadEventDrivenChart();
+                    
+                } else {
+                    showAlert(`❌ Could not load results: ${data.message}`, 'error');
+                }
+                
+            } catch (error) {
+                console.error('Error loading results:', error);
+                showAlert(`❌ Results loading error: ${error.message}`, 'error');
+            }
+        }
+        
+        function updateEventProgress(analysisStatus) {
+            const status = analysisStatus.status;
+            const progress = analysisStatus.progress || {};
+            
+            if (status === 'running') {
+                updateProgressStep('workflowStarted', 'completed');
+                updateProgressStep('dataProcessed', 'active');
+                
+                if (progress.data_fetch === 'completed') {
+                    updateProgressStep('dataProcessed', 'completed');
+                    updateProgressStep('modelTrained', 'active');
+                }
+                
+                if (progress.lstm_training === 'completed') {
+                    updateProgressStep('modelTrained', 'completed');
+                    updateProgressStep('predictionsGenerated', 'active');
+                }
+            }
+        }
+        
+        function displayEventDrivenResults(results) {
+            console.log('📊 Displaying event-driven results:', results);
+            
+            try {
+                // Update status cards from read model
+                if (results.data) {
+                    updateStatusCardsFromReadModel(results.data);
+                }
+                
+                // Display predictions from read model
+                if (results.predictions) {
+                    displayEventDrivenPredictions(results.predictions);
+                }
+                
+                console.log('✅ Event-driven results displayed successfully');
+                
+            } catch (error) {
+                console.error('Error displaying event-driven results:', error);
+                showAlert(`Error displaying results: ${error.message}`, 'error');
+            }
+        }
+        
+        function updateStatusCardsFromReadModel(data) {
+            try {
+                console.log('📊 Updating status cards from CQRS read model:', data);
+                
+                const currentPriceEl = document.getElementById('currentPrice');
+                const priceChangeEl = document.getElementById('priceChange');
+                
+                if (currentPriceEl && data.current_price !== undefined) {
+                    currentPriceEl.textContent = `$${data.current_price}`;
+                    currentPriceEl.className = 'status-value neutral';
+                }
+                
+                if (priceChangeEl && data.change !== undefined && data.change_pct !== undefined) {
+                    const changeClass = data.change >= 0 ? 'positive' : 'negative';
+                    const changeSymbol = data.change >= 0 ? '+' : '';
+                    priceChangeEl.innerHTML = `${changeSymbol}$${data.change} (${changeSymbol}${data.change_pct.toFixed(2)}%)<br><small>From Read Model</small>`;
+                    priceChangeEl.className = `status-change ${changeClass}`;
+                }
+                
+                console.log('✅ Status cards updated from read model');
+                
+            } catch (error) {
+                console.error('Error updating status cards from read model:', error);
+            }
+        }
+        
+        function displayEventDrivenPredictions(predictions) {
+            try {
+                console.log('📈 Displaying event-driven predictions:', predictions);
+                
+                const container = document.getElementById('predictionsContainer');
+                const lstmList = document.getElementById('lstmPredictions');
+                
+                if (!container || !lstmList) {
+                    throw new Error('Prediction display elements not found');
+                }
+                
+                lstmList.innerHTML = '';
+                
+                const lstmPredictions = predictions.lstm_predictions;
+                
+                if (lstmPredictions && lstmPredictions.dates && lstmPredictions.prices) {
+                    console.log(`📊 Displaying ${lstmPredictions.dates.length} event-driven predictions`);
+                    
+                    lstmPredictions.dates.slice(0, 7).forEach((date, index) => {
+                        const price = lstmPredictions.prices[index];
+                        const li = document.createElement('li');
+                        
+                        if (lstmPredictions.lower_bound && lstmPredictions.upper_bound) {
+                            const lower = lstmPredictions.lower_bound[index];
+                            const upper = lstmPredictions.upper_bound[index];
+                            li.innerHTML = `
+                                <span>${date}</span>
+                                <span>$${price.toFixed(2)}<br><small style="color: #6c757d;">($${lower.toFixed(2)} - $${upper.toFixed(2)})</small></span>
+                            `;
+                        } else {
+                            li.innerHTML = `<span>${date}</span><span>$${price.toFixed(2)}</span>`;
+                        }
+                        lstmList.appendChild(li);
+                    });
+                    
+                    console.log('✅ Event-driven predictions displayed');
+                } else {
+                    console.log('No valid predictions in read model');
+                    lstmList.innerHTML = '<li><span>No predictions available</span><span>-</span></li>';
+                }
+                
+                container.style.display = 'grid';
+                
+            } catch (error) {
+                console.error('Error displaying event-driven predictions:', error);
+                showAlert(`Error displaying predictions: ${error.message}`, 'error');
+            }
+        }
+        
+        async function loadEventDrivenChart() {
+            if (!currentSymbol) return;
+            
+            const chartDiv = document.getElementById('chartDiv');
+            
+            try {
+                console.log(`📊 Loading event-driven chart for ${currentSymbol}...`);
+                
+                chartDiv.innerHTML = '<div class="loading">Loading chart from event-driven system...</div>';
+                
+                const response = await fetch(`/api/chart/${currentSymbol}`);
+                const data = await response.json();
+                
+                console.log('Chart response:', data);
+                
+                if (data.status === 'success') {
+                    const chartData = JSON.parse(data.chart);
+                    
+                    chartDiv.innerHTML = '';
+                    Plotly.newPlot('chartDiv', chartData.data, chartData.layout, {responsive: true});
+                    
+                    console.log('✅ Event-driven chart loaded successfully');
+                    
+                    // Add chart info
+                    if (data.chart_info) {
+                        const info = data.chart_info;
+                        showAlert(`📊 Chart loaded from ${info.architecture || 'event-driven system'}`, 'success');
+                    }
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (error) {
+                console.error('Error loading event-driven chart:', error);
+                chartDiv.innerHTML = 
+                    `<div style="padding: 40px; text-align: center; color: #dc3545;">
+                        <strong>Chart Error:</strong> ${error.message}
+                    </div>`;
+            }
+        }
+        
+        function showEventProgress() {
+            eventProgress.style.display = 'block';
+            // Reset all steps
+            document.querySelectorAll('.progress-step').forEach(step => {
+                step.className = 'progress-step';
+            });
+        }
+        
+        function updateProgressStep(stepId, status) {
+            const step = document.getElementById(stepId);
+            if (step) {
+                step.className = `progress-step ${status}`;
+            }
+        }
+        
+        function updateAllProgressStepsError() {
+            document.querySelectorAll('.progress-step').forEach(step => {
+                if (!step.classList.contains('completed')) {
+                    step.className = 'progress-step error';
+                }
+            });
+        }
+        
+        function updateCommandStatus(message) {
+            commandStatus.textContent = message;
+            commandStatus.style.display = 'block';
+            
+            // Auto-hide after 10 seconds
+            setTimeout(() => {
+                commandStatus.style.display = 'none';
+            }, 10000);
+        }
+        
+        function updateAnalysisStatus(status) {
+            const analysisStatusEl = document.getElementById('analysisStatus');
+            if (analysisStatusEl) {
+                analysisStatusEl.textContent = status;
+                
+                // Update color based on status
+                if (status === 'Completed') {
+                    analysisStatusEl.className = 'status-value positive';
+                } else if (status === 'Failed' || status === 'Error') {
+                    analysisStatusEl.className = 'status-value negative';
+                } else if (status === 'Processing...' || status === 'Running...') {
+                    analysisStatusEl.className = 'status-value neutral';
+                } else {
+                    analysisStatusEl.className = 'status-value neutral';
+                }
+            }
+        }
+        
+        function showAlert(message, type = 'info') {
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.innerHTML = `
+                <strong>${getAlertIcon(type)}</strong> ${message}
+                <small style="display: block; margin-top: 5px; opacity: 0.8;">
+                    ${new Date().toLocaleTimeString()} - Event-driven system
+                </small>
+            `;
+            
+            alertContainer.innerHTML = '';
+            alertContainer.appendChild(alert);
+            
+            console.log(`📢 Alert (${type}): ${message}`);
+            
+            // Auto-remove success and info alerts
+            if (type === 'success' || type === 'info') {
+                setTimeout(() => {
+                    if (alert.parentNode) {
+                        alert.remove();
+                    }
+                }, 6000);
+            }
+        }
+        
+        function getAlertIcon(type) {
+            const icons = {
+                'success': '✅',
+                'error': '❌',
+                'warning': '⚠️',
+                'info': 'ℹ️'
+            };
+            return icons[type] || 'ℹ️';
+        }
+        
+        function setLoading(button, isLoading) {
+            if (isLoading) {
+                button.disabled = true;
+                button.dataset.originalText = button.textContent;
+                button.textContent = '⚡ Sending Command...';
+            } else {
+                button.disabled = false;
+                button.textContent = button.dataset.originalText;
+            }
+        }
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Ctrl/Cmd + Enter: Send command
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                if (currentSymbol) sendAnalysisCommand();
+            }
+        });
+        
+        console.log('✅ Event-driven dashboard fully initialized');
+        console.log('🎯 Ready for CQRS commands!');
+    </script>
+</body>
+</html>

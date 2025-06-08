@@ -1,0 +1,78 @@
+version: '3.8'
+
+services:
+  kafka:
+    image: bitnami/kafka:3.4.0
+    container_name: stock-kafka
+    ports:
+      - "9092:9092"
+      - "9093:9093"
+    environment:
+      # KRaft mode configuration
+      - KAFKA_CFG_NODE_ID=0
+      - KAFKA_CFG_PROCESS_ROLES=controller,broker
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@localhost:9093
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=true
+    volumes:
+      - kafka_data:/bitnami/kafka
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics.sh --bootstrap-server localhost:9092 --list"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped
+
+  stock-app:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: stock-prediction-app
+    ports:
+      - "6000:6000"
+    environment:
+      - FLASK_ENV=production
+      - FLASK_DEBUG=false
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - FINNHUB_API_KEY=${FINNHUB_API_KEY}
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      kafka:
+        condition: service_healthy
+    volumes:
+      - ./models:/app/models
+      - ./data:/app/data
+      - ./logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6000/api/supported_symbols"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    ports:
+      - "8080:8080"
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=local
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:9092
+      - KAFKA_CLUSTERS_0_METRICS_PORT=9997
+    depends_on:
+      - kafka
+    restart: unless-stopped
+
+volumes:
+  kafka_data:
+    driver: local
+
+networks:
+  default:
+    name: stock-prediction-networkx
