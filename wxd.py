@@ -1,7 +1,3 @@
-# ============================================================================
-# FIXED WATSONX.DATA INTEGRATION - Local Development Compatible
-# High-performance analytics with local Spark and optional watsonx.data
-# ============================================================================
 
 import logging
 import pandas as pd
