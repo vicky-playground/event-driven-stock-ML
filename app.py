@@ -1,7 +1,3 @@
-# ============================================================================
-# FIXED APP.PY - EVENT-DRIVEN FLASK APPLICATION
-# Complete fix for the stuck workflow issue
-# ============================================================================
 
 from flask import Flask, render_template, jsonify, request
 from flask_cors import CORS
