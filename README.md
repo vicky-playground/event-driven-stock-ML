@@ -1,6 +1,8 @@
 # ⚡ Event-Driven Stock Prediction
 
-The goal of this project is to let me learn **Event-Driven Architecture**, **CQRS**, **Event Sourcing**, and **Apache Kafka** using a real-time stock prediction example with LSTM models.  
+The goal of this project is to let me learn **Event-Driven Architecture**, **CQRS**, **Event Sourcing**, and **Apache Kafka** using a real-time stock prediction example with LSTM models. 
+Please note the prediction is not reliable at all as the LSTM model does not account for critical stock market factors such as company fundamentals, macroeconomic indicators, or market sentiment.
+
 ![alt text](image.png)
 ---
 
