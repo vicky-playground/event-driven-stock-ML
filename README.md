@@ -1,8 +1,19 @@
 # ⚡ Event-Driven Stock Prediction
 
-The goal of this project is to let me learn **Event-Driven Architecture**, **CQRS**, **Event Sourcing**, and **Apache Kafka** using a real-time stock prediction example with LSTM models. 
+This project is a hands-on learning exercise to explore:
 
-⚠️Please note the prediction is not reliable at all as the LSTM model does not account for critical stock market factors such as company fundamentals, macroeconomic indicators, or market sentiment.
+- **Event-Driven Architecture (EDA)**
+- **Command Query Responsibility Segregation (CQRS)**
+- **Event Sourcing**
+- **Apache Kafka**
+- Real-time ML with **LSTM models**
+
+It demonstrates how real-time events can drive stock prediction workflows in a scalable, loosely coupled system.
+
+👉 **Read the full article on the benefits of Event-Driven Architecture here:**  
+[🔗 How Event-Driven Architecture Transforms AI/ML](https://vicky-note.medium.com/how-event-driven-architecture-transforms-ai-ml-ab5d47d8a745)
+
+⚠️ Please note the prediction is not reliable at all as the LSTM model does not account for critical stock market factors such as company fundamentals, macroeconomic indicators, or market sentiment.
 
 ![alt text](image.png)
 ---
