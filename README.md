@@ -1,4 +1,4 @@
-# ⚡ Event-Driven Stock Prediction
+# Event-Driven Stock Prediction
 
 This project is a hands-on learning exercise to explore:
 
@@ -18,15 +18,6 @@ It demonstrates how real-time events can drive stock prediction workflows in a s
 ![alt text](image.png)
 ---
 
-## 📚 Key Concepts
-
-- **CQRS**: Separate models for commands (writes) and queries (reads)
-- **Event Sourcing**: All actions recorded as immutable events
-- **Kafka**: Event broker to decouple producers and consumers
-- **ML Pipeline**: LSTM model with technical indicators
-- **Dashboard**: Web interface to send commands and visualize results
-
----
 
 ## 🧱 Architecture
 User → HTTP API → Command → Kafka Events → Async ML → Predictions → Read Model 
