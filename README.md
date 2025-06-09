@@ -29,7 +29,7 @@ It demonstrates how real-time events can drive stock prediction workflows in a s
 ---
 
 ## 🧱 Architecture
-User → HTTP API → Command → Kafka Events → Async ML → Predictions → Read Model → 
+User → HTTP API → Command → Kafka Events → Async ML → Predictions → Read Model 
 
 
 ---
