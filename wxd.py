@@ -10,7 +10,6 @@ from concurrent.futures import ThreadPoolExecutor
 import os
 from dotenv import load_dotenv
 
-# Import your existing components
 try:
     from event_store import Event, StockAnalysisEvents
     EVENT_STORE_AVAILABLE = True
@@ -25,20 +24,8 @@ except ImportError:
     STOCK_PREDICTOR_AVAILABLE = False
     print("⚠️ Stock predictor not available")
 
-# Try to import Spark (optional for local development)
-try:
-    from pyspark.sql import SparkSession, DataFrame
-    from pyspark.sql.functions import *
-    from pyspark.sql.types import *
-    SPARK_AVAILABLE = True
-    print("✅ PySpark available for local development")
-except ImportError:
-    SPARK_AVAILABLE = False
-    print("⚠️ PySpark not available - using pandas fallback")
 
-load_dotenv()
-
-# watsonx.data Configuration (from environment)
+# watsonx.data Configuration 
 CATALOG_NAME = os.getenv('CATALOG_NAME', 'local_catalog')
 SCHEMA_NAME = os.getenv('SCHEMA_NAME', 'stock')
 DB_BUCKET = os.getenv('DB_BUCKET', 'local-bucket')
