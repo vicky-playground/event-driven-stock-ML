@@ -34,9 +34,9 @@ class UnifiedKafkaManager:
         if self.finnhub_api_key:
             try:
                 self.finnhub_client = finnhub.Client(api_key=self.finnhub_api_key)
-                print("✅ Finnhub client initialized")
+                print("Finnhub client initialized")
             except Exception as e:
-                print(f"⚠️ Error initializing Finnhub client: {e}")
+                print(f"Error initializing Finnhub client: {e}")
         
         # Data buffers for real-time aggregation
         self.price_buffers = defaultdict(lambda: deque(maxlen=1000))
@@ -83,13 +83,13 @@ class UnifiedKafkaManager:
                     request_timeout_ms=30000,
                     api_version=(0, 10, 1)
                 )
-                print(f"✅ Connected to Kafka on attempt {attempt + 1}")
+                print(f"Connected to Kafka on attempt {attempt + 1}")
                 return True
             except NoBrokersAvailable:
-                print(f"⚠️ Kafka connection attempt {attempt + 1} failed, retrying in {retry_delay} seconds...")
+                print(f"Kafka connection attempt {attempt + 1} failed, retrying in {retry_delay} seconds...")
                 time.sleep(retry_delay)
             except Exception as e:
-                print(f"⚠️ Kafka connection error (attempt {attempt + 1}): {e}")
+                print(f"Kafka connection error (attempt {attempt + 1}): {e}")
                 time.sleep(retry_delay)
         
         print("⚠️ Could not connect to Kafka - continuing without Kafka")
@@ -221,7 +221,7 @@ class UnifiedKafkaManager:
     
     def on_open(self, ws):
         """Handle WebSocket open"""
-        print("✅ Real-time WebSocket connected")
+        print("Real-time WebSocket connected")
         self.reconnect_attempts = 0
         
         # Subscribe to existing symbols
@@ -373,25 +373,17 @@ if __name__ == "__main__":
     
     # Test the fixed Kafka manager
     api_key = os.getenv('FINNHUB_API_KEY')
-    
-    if not api_key:
-        print("❌ Please set FINNHUB_API_KEY environment variable")
-        print("   Get your free API key from: https://finnhub.io/dashboard")
-        exit(1)
-    
-    print("🧪 Testing Fixed Finnhub Integration...")
+
     
     try:
         kafka_manager = UnifiedKafkaManager(api_key)
         
         # Test basic functionality
-        print("\n📊 Testing symbol validation...")
         if kafka_manager.validate_symbol('AAPL'):
-            print("✅ AAPL is a valid symbol")
+            print("AAPL is a valid symbol")
         else:
             print("❌ AAPL validation failed")
         
-        print("\n📊 Testing historical data...")
         df = kafka_manager.get_historical_data('AAPL', days_back=30)
         if df is not None and not df.empty:
             print(f"✅ Historical data fetched: {len(df)} records")
@@ -420,7 +412,6 @@ if __name__ == "__main__":
         else:
             print("❌ Could not fetch symbols")
         
-        print("\n✅ All tests completed!")
         
     except KeyboardInterrupt:
         print("\n🛑 Test interrupted by user")
